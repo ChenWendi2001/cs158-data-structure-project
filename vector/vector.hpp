@@ -18,6 +18,7 @@ private:
     T** data;
     size_t currentLength;
     size_t maxSize;
+    int *flag;
     void doubleSpace(){
         T** temp = data;
         int temp_size = maxSize;
@@ -47,14 +48,14 @@ public:
          *   just add whatever you want.
          */
         T** ptr;
-        T** start;
+        int* flag;
     public:
         /**
          * return a new iterator which pointer n-next elements
          * as well as operator-
          */
         iterator(){};
-        iterator(T** a,T** b):ptr(a),start(b){}
+        iterator(T** a,int* b):ptr(a),flag(b){}
         iterator operator+(const int &n) const {
             //TODO
             iterator newone;
@@ -72,7 +73,7 @@ public:
         // return the distance between two iterators,
         // if these two iterators point to different vectors, throw invaild_iterator.
         int operator-(const iterator &rhs) const {
-            if(start != rhs.start) throw invalid_iterator();
+            if(flag != rhs.flag) throw invalid_iterator();
             return (ptr-rhs.ptr);
             //TODO
         }
@@ -126,22 +127,22 @@ public:
          * a operator to check whether two iterators are same (pointing to the same memory address).
          */
         bool operator==(const iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr==rhs.ptr;
         }
         bool operator==(const const_iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr==rhs.ptr;
         }
         /**
          * some other operator for iterator.
          */
         bool operator!=(const iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr!=rhs.ptr;
         }
         bool operator!=(const const_iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr!=rhs.ptr;
         }
     };
@@ -153,10 +154,10 @@ public:
     private:
 
         T** ptr;
-        T** start;
+        int* flag;
     public:
         const_iterator(){};
-        const_iterator(T** a,T** b):ptr(a),start(b){}
+        const_iterator(T** a,int* b):ptr(a),flag(b){}
         const_iterator operator+(const int &n) const {
 
             const_iterator newone;
@@ -173,7 +174,7 @@ public:
         }
 
         int operator-(const const_iterator &rhs) const {
-            if(start != rhs.start) throw invalid_iterator();
+            if(flag != rhs.flag) throw invalid_iterator();
             return (ptr-rhs.ptr);
 
         }
@@ -214,20 +215,20 @@ public:
         }
 
         bool operator==(const iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr==rhs.ptr;
         }
         bool operator==(const const_iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr==rhs.ptr;
         }
 
         bool operator!=(const iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr!=rhs.ptr;
         }
         bool operator!=(const const_iterator &rhs) const {
-            if(start!=rhs.start) throw invalid_iterator();
+            if(flag!=rhs.flag) throw invalid_iterator();
             return ptr!=rhs.ptr;
         }
     };
@@ -237,6 +238,7 @@ public:
      */
     vector(int initSize=10) {
         data = new T*[initSize];
+        flag = new int;
         maxSize = initSize;
         currentLength = 0;
     }
@@ -244,6 +246,7 @@ public:
         maxSize = other.maxSize;
         currentLength = other.currentLength;
         data = new T*[currentLength];
+        flag = new int;
         for(int i = 0 ;i<currentLength;i++){
             data[i] = new T(*(other.data[i]));
         }
@@ -254,6 +257,7 @@ public:
     ~vector() {
         for(int i = 0;i<currentLength;i++) delete data[i];
         delete []data;
+        delete flag;
     }
     /**
      * TODO Assignment operator
@@ -316,19 +320,19 @@ public:
      * returns an iterator to the beginning.
      */
     iterator begin() {
-        return vector<T>::iterator(data,data);
+        return vector<T>::iterator(data,flag);
     }
     const_iterator cbegin() const {
-        return vector<T>::const_iterator(data,data);
+        return vector<T>::const_iterator(data,flag);
     }
     /**
      * returns an iterator to the end.
      */
     iterator end() {
-        return vector<T>::iterator(data+currentLength,data);
+        return vector<T>::iterator(data+currentLength,flag);
     }
     const_iterator cend() const {
-        return vector<T>::const_iterator(data+currentLength,data);
+        return vector<T>::const_iterator(data+currentLength,flag);
     }
     /**
      * checks whether the container is empty
@@ -361,7 +365,7 @@ public:
             data[i]=data[i-1];
         }
         data[dist]=new T(value);
-        return iterator(data+dist,data);
+        return iterator(data+dist,flag);
     }
     /**
      * inserts value at index ind.
@@ -378,7 +382,7 @@ public:
             data[i]=data[i-1];
         }
         data[dist]=new T(value);
-        return iterator(data+dist,data);
+        return iterator(data+dist,flag);
     }
     /**
      * removes the element at pos.
