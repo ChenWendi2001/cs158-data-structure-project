@@ -15,20 +15,21 @@ namespace sjtu {
 template<typename T>
 class vector {
 private:
-    T** data;
+    T* data;
     size_t currentLength;
     size_t maxSize;
     int *flag;
     void doubleSpace(){
-        T** temp = data;
+        T* temp = data;
         int temp_size = maxSize;
         maxSize *= 2;
-        data = new T*[maxSize];
+        data = (T*)malloc(sizeof(T)*maxSize);
+        memset(data,0,sizeof(T)*maxSize);
         for(int i = 0;i<currentLength;i++){
-            data[i]=new T(*temp[i]);
+            data[i]=temp[i];
         }
-        for(int i = 0;i<temp_size;i++) delete temp[i];
-        delete []temp;
+        for(int i = 0;i<temp_size;i++) temp[i].~T();
+        free(temp);
     };
 public:
 
@@ -47,7 +48,7 @@ public:
          * TODO add data members
          *   just add whatever you want.
          */
-        T** ptr;
+        T* ptr;
         int* flag;
     public:
         /**
@@ -55,7 +56,7 @@ public:
          * as well as operator-
          */
         iterator(){};
-        iterator(T** a,int* b):ptr(a),flag(b){}
+        iterator(T* a,int* b):ptr(a),flag(b){}
         iterator operator+(const int &n) const {
             //TODO
             iterator newone;
@@ -121,7 +122,7 @@ public:
          * TODO *it
          */
         T& operator*() const{
-            return **this->ptr;
+            return *(this->ptr);
         }
         /**
          * a operator to check whether two iterators are same (pointing to the same memory address).
@@ -153,11 +154,11 @@ public:
     class const_iterator {
     private:
 
-        T** ptr;
+        T* ptr;
         int* flag;
     public:
         const_iterator(){};
-        const_iterator(T** a,int* b):ptr(a),flag(b){}
+        const_iterator(T* a,int* b):ptr(a),flag(b){}
         const_iterator operator+(const int &n) const {
 
             const_iterator newone;
@@ -211,7 +212,7 @@ public:
         }
 
         const T& operator*() const{
-            return **this->ptr;
+            return *(this->ptr);
         }
 
         bool operator==(const iterator &rhs) const {
@@ -237,7 +238,8 @@ public:
      * Atleast two: default constructor, copy constructor
      */
     vector(int initSize=10) {
-        data = new T*[initSize];
+        data = (T*)malloc(sizeof(T)*initSize);
+        memset(data,0,sizeof(T)*initSize);
         flag = new int;
         maxSize = initSize;
         currentLength = 0;
@@ -245,18 +247,19 @@ public:
     vector(const vector &other) {
         maxSize = other.maxSize;
         currentLength = other.currentLength;
-        data = new T*[currentLength];
+        data = (T*)malloc(sizeof(T)*currentLength);
+        memset(data,0,sizeof(T)*currentLength);
         flag = new int;
         for(int i = 0 ;i<currentLength;i++){
-            data[i] = new T(*(other.data[i]));
+            data[i] = other.data[i];
         }
     }
     /**
      * TODO Destructor
      */
     ~vector() {
-        for(int i = 0;i<currentLength;i++) delete data[i];
-        delete []data;
+        for(int i = 0;i<currentLength;i++) data[i].~T();
+        free(data);
         delete flag;
     }
     /**
@@ -264,13 +267,14 @@ public:
      */
     vector &operator=(const vector &other) {
         if (this == &other) return *this;
-        for(int i = 0;i<currentLength;i++) delete data[i];
-        delete []data;
+        for(int i = 0;i<currentLength;i++) data[i].~T();
+        free(data);
         maxSize = other.maxSize;
         currentLength = other.currentLength;
-        data = new T*[currentLength];
+        data = (T*)malloc(sizeof(T)*currentLength);
+        memset(data,0,sizeof(T)*currentLength);
         for(int i = 0 ;i<currentLength;i++){
-            data[i] = new T(*(other.data[i]));
+            data[i] = other.data[i];
         }
     }
     /**
@@ -279,12 +283,12 @@ public:
      */
     T & at(const size_t &pos) {
         if(pos>=currentLength) throw index_out_of_bound();
-        return *data[pos];
+        return data[pos];
     }
 
     const T & at(const size_t &pos) const {
         if(pos>=currentLength) throw index_out_of_bound();
-        return *data[pos];
+        return data[pos];
     }
     /**
      * assigns specified element with bounds checking
@@ -294,11 +298,11 @@ public:
      */
     T & operator[](const size_t &pos) {
         if(pos>=currentLength) throw index_out_of_bound();
-        return *data[pos];
+        return data[pos];
     }
     const T & operator[](const size_t &pos) const {
         if(pos>=currentLength) throw index_out_of_bound();
-        return *data[pos];
+        return data[pos];
     }
     /**
      * access the first element.
@@ -306,7 +310,7 @@ public:
      */
     const T & front() const {
         if(currentLength==0) throw container_is_empty();
-        return *data[0];
+        return data[0];
     }
     /**
      * access the last element.
@@ -314,7 +318,7 @@ public:
      */
     const T & back() const {
         if(currentLength==0) throw container_is_empty();
-        return *data[currentLength-1];
+        return data[currentLength-1];
     }
     /**
      * returns an iterator to the beginning.
@@ -350,7 +354,7 @@ public:
      * clears the contents
      */
     void clear() {
-        for(int i = 0;i<currentLength;i++) delete data[i];
+        for(int i = 0;i<currentLength;i++) data[i].~T();
         currentLength = 0;
     }
     /**
@@ -364,7 +368,8 @@ public:
         for(int i = currentLength-1;i>dist;i--){
             data[i]=data[i-1];
         }
-        data[dist]=new T(value);
+        data[dist].~T();
+        data[dist]=value;
         return iterator(data+dist,flag);
     }
     /**
@@ -374,14 +379,15 @@ public:
      * throw index_out_of_bound if ind > size (in this situation ind can be size because after inserting the size will increase 1.)
      */
     iterator insert(const size_t &ind, const T &value) {
-        if(ind>maxSize) throw index_out_of_bound();
+        if(ind>currentLength) throw index_out_of_bound();
         int dist = ind;
         if(currentLength==maxSize) doubleSpace();
         currentLength++;
         for(int i = currentLength-1;i>dist;i--){
             data[i]=data[i-1];
         }
-        data[dist]=new T(value);
+        if(dist!=currentLength-1)data[dist].~T();
+        data[dist]=value;
         return iterator(data+dist,flag);
     }
     /**
@@ -391,11 +397,12 @@ public:
      */
     iterator erase(iterator pos) {
         int dist = pos-begin();
-        delete data[dist];
+        data[dist].~T();
         for(int i = dist;i<currentLength-1;i++){
             data[i]=data[i+1];
         }
         currentLength--;
+        data[currentLength].~T();
         return begin()+dist;
     }
     /**
@@ -404,13 +411,14 @@ public:
      * throw index_out_of_bound if ind >= size
      */
     iterator erase(const size_t &ind) {
-        if(ind>=maxSize) throw index_out_of_bound();
+        if(ind>=currentLength) throw index_out_of_bound();
         int dist = ind;
-        delete data[dist];
+        data[dist].~T();
         for(int i = dist;i<currentLength-1;i++){
             data[i]=data[i+1];
         }
         currentLength--;
+        data[currentLength].~T();
         return begin()+dist;
     }
     /**
@@ -418,7 +426,7 @@ public:
      */
     void push_back(const T &value) {
         if(currentLength==maxSize) doubleSpace();
-        data[currentLength++] = new T(value);
+        data[currentLength++] = value;
     }
     /**
      * remove the last element from the end.
@@ -426,7 +434,7 @@ public:
      */
     void pop_back() {
         if(size()==0) throw container_is_empty();
-        delete data[--currentLength];
+        data[--currentLength].~T();
     }
 };
 
