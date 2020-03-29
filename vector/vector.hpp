@@ -92,7 +92,7 @@ public:
          * TODO iter++
          */
         iterator operator++(int) {
-            int temp = *this;
+            iterator temp = *this;
             ptr+=1;
             return temp;
         }
@@ -107,7 +107,7 @@ public:
          * TODO iter--
          */
         iterator operator--(int) {
-            int temp = *this;
+            iterator temp = *this;
             ptr-=1;
             return temp;
         }
@@ -190,7 +190,7 @@ public:
         }
 
         const_iterator operator++(int) {
-            int temp = *this;
+            const_iterator temp = *this;
             ptr+=1;
             return temp;
         }
@@ -201,7 +201,7 @@ public:
         }
 
         const_iterator operator--(int) {
-            int temp = *this;
+            const_iterator temp = *this;
             ptr-=1;
             return temp;
         }
