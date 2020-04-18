@@ -91,6 +91,37 @@ private:
         }
         else return false;
     }
+    int checkSize(int n){
+        if(n>0&&size_of_blocks[n]+size_of_blocks[n-1]<=base_now){
+            int temp = size_of_blocks[n-1];
+            blocks_end[n-1]->next = blocks[n];
+            blocks[n]->prev = blocks_end[n-1];
+            blocks_end[n-1] = blocks_end[n];
+            size_of_blocks[n-1]+=size_of_blocks[n];
+            for (int i = n; i <= num_of_blocks - 2; i++) {
+                blocks[i] = blocks[i + 1];
+                blocks_end[i] = blocks_end[i + 1];
+                size_of_blocks[i] = size_of_blocks[i + 1];
+            }
+            num_of_blocks--;
+            return temp;
+        }
+        else if(n+1<num_of_blocks&&size_of_blocks[n]+size_of_blocks[n+1]<=base_now){
+            int temp = size_of_blocks[n];
+            blocks_end[n]->next = blocks[n+1];
+            blocks[n+1]->prev = blocks_end[n];
+            blocks_end[n] = blocks_end[n+1];
+            size_of_blocks[n]+=size_of_blocks[n+1];
+            for (int i = n+1; i <= num_of_blocks - 2; i++) {
+                blocks[i] = blocks[i + 1];
+                blocks_end[i] = blocks_end[i + 1];
+                size_of_blocks[i] = size_of_blocks[i + 1];
+            }
+            num_of_blocks--;
+            return -temp;
+        }
+        return 0;
+    }
 
 public:
     class const_iterator;
@@ -321,10 +352,10 @@ public:
         node** map;
         node** map_end;
         int num;
-        node* cur;
-        int* size;
+        const node* cur;
+        const int* size;
         int index;
-        const_iterator(node** m = NULL, node** m2 = NULL, int n = 0, node* c = NULL, int* s = NULL,int i=0) :map(m), map_end(m2), num(n), cur(c), size(s),index(i) {}
+        const_iterator( node** m = NULL,  node** m2 = NULL, int n = 0, const node* c = NULL, const int* s = NULL,int i=0) :map(m), map_end(m2), num(n), cur(c), size(s),index(i) {}
         const_iterator(const const_iterator& other) {
                 // TODO
             map = other.map;
@@ -348,7 +379,7 @@ public:
             if(n==0) return *this;
             if(n<0) { return *this-(-n);}
             int mov = n;
-            iterator newone(map, map_end, num, cur, size,index);
+            const_iterator newone(map, map_end, num, cur, size,index);
             while(1){
                 if(newone.index+mov<newone.size[newone.num]){
                     while(mov--){newone.cur=newone.cur->next;newone.index++;}
@@ -371,7 +402,7 @@ public:
             if(n==0) return *this;
             if(n<0) { return *this+(-n);}
             int mov = n;
-            iterator newone(map, map_end, num, cur, size,index);
+            const_iterator newone(map, map_end, num, cur, size,index);
             for(int i = num;i>=0;i--){
                 if(mov<=newone.index){
                     while(mov--){
@@ -461,7 +492,7 @@ public:
              * TODO iter++
              */
         const_iterator operator++(int) {
-            iterator newone(map, map_end, num, cur, size,index);
+            const_iterator newone(map, map_end, num, cur, size,index);
             if (cur&&cur->next) {cur = cur->next;index++;}
             else {
                 num++;
@@ -487,7 +518,7 @@ public:
              * TODO iter--
              */
         const_iterator operator--(int) {
-            iterator newone(map, map_end, num, cur, size,index);
+            const_iterator newone(map, map_end, num, cur, size,index);
             if (cur&&cur->prev) {cur = cur->prev;index--;}
             else {
                 num--;
@@ -852,6 +883,18 @@ public:
         pos.size[pos.num]--;
         currentLength--;
         checkEmptyblock(pos.num);
+        int add = checkSize(pos.num);
+        if(add>0&&newone.num==pos.num){
+            newone.index+=add;
+            newone.num--;
+        }
+        else if(add>0){
+            newone.num--;
+        }
+        else if(add<0&&newone.num!=pos.num){
+            newone.index-=add;
+            newone.num--;
+        }
         return newone;
     }
     /**
@@ -884,6 +927,7 @@ public:
         size_of_blocks[num_of_blocks - 1]--; currentLength--;
         delete temp;
         checkEmptyblock(num_of_blocks - 1);
+        checkSize(num_of_blocks - 1);
     }
     /**
      * inserts an element to the beginning.
@@ -913,6 +957,7 @@ public:
         size_of_blocks[0]--; currentLength--;
         delete temp;
         checkEmptyblock(0);
+        checkSize(0);
     }
 };
 
