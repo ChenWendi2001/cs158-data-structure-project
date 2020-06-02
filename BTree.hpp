@@ -1,3 +1,6 @@
+#ifndef SJTU_BTREE_HPP
+#define SJTU_BTREE_HPP
+
 #include "utility.hpp"
 #include <functional>
 #include <cstddef>
@@ -76,6 +79,7 @@ namespace sjtu {
                 memcpy(info+pos, reinterpret_cast<char*>(&off),sizeof(offset));
             }
             Node& operator=(const Node &other){
+                if(&other==this)return *this;
                 addr=other.addr;
                 prev = other.prev;
                 next=other.next;
@@ -441,6 +445,12 @@ namespace sjtu {
                 *cur=*(other.cur);
                 num=other.num;
             }
+            iterator& operator=(const iterator& other) {
+                if(&other==this) return *this;
+                cur=new Node;
+                *cur=*(other.cur);
+                num=other.num;
+            }
             ~iterator() {
                 delete cur;
             }
@@ -541,8 +551,8 @@ namespace sjtu {
             while(1){
                 i = a.cur->keySize;
                 while(i>=2&&a.cur->getKey(i)>key)i--;
-                if(a.cur.isLeaf)break;
-                get_block(a.cur->getOff(i),a.cur);
+                if(a.cur->isLeaf)break;
+                get_block(a.cur->getOff(i),*(a.cur));
             }
             a.num = i;
             return a;
@@ -553,18 +563,23 @@ namespace sjtu {
             //init();
             iterator a;
             a.set(file);
-            *(a.cur) =*root;
+            Node* r =root;
             int i;
             while(1){
-                i = a.cur->keySize;
-                while(i>=2&&a.cur->getKey(i)>=key)i--;
-                if(a.cur->isLeaf)break;
-                get_block(a.cur->getOff(i),*(a.cur));
+                i = r->keySize;
+                while(i>=2&&r->getKey(i)>=key)i--;
+                if(r->isLeaf)break;
+                if(r->child[i]==NULL){
+                    r->child[i]=new Node;
+                    get_block(r->getOff(i),*(r->child[i]));
+                }
+                r=r->child[i];
             }
-            while(i>=1&&a.cur->getKey(i)>=key)i--;
-            a.num = i+1;
+            *(a.cur)=*r;
+            while(a.getKey()<key)++a;
             return a;
         }
     };
 }  // namespace sjtu
 
+#endif
