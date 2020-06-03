@@ -92,7 +92,7 @@ namespace sjtu {
                 memcpy(child,other.child,(m+2)*sizeof(Node*));
             }
 
-            void move(int n){//将第m个Key后的节点信息后移动，以便空出空间插入新信息
+            void move(int n){//将第n个Key后的节点信息后移动，以便空出空间插入新信息
                 if(keySize==m+1||n==m+1)return;
                 int pos = (n-1)*sizeof(Key)+(n-1)*dataSize;
                 memmove(info+pos+sizeof(Key)+dataSize,
@@ -101,6 +101,16 @@ namespace sjtu {
                 memmove(child+(n+1),
                         child+n,
                         (keySize-n+1)*sizeof(Node*));
+            }
+            void moveBack(int n){//将第n个Key后的节点信息向前移动，相当于删除第n个节点
+                if(keySize==1)return;
+                int pos = (n-1)*sizeof(Key)+(n-1)*dataSize;
+                memmove(info+pos,
+                        info+pos+sizeof(Key)+dataSize,
+                        (keySize-n)*sizeof(Key)+(keySize-n)*dataSize);
+                memmove(child+(n),
+                        child+n+1,
+                        (keySize-n)*sizeof(Node*));
             }
         };
 
@@ -184,7 +194,7 @@ namespace sjtu {
                 }
             }
             while(i>=1&&r->getKey(i)>key)i--;
-            if(i==0||i>=1&&r->getKey(i)<key)return false;
+            if(i==0||i>=1&&r->getKey(i)!=key)return false;
             else return true;
         }
         offset getAddr(){
@@ -252,7 +262,119 @@ namespace sjtu {
                     return 0;
                 }
             }
-
+        }
+        int erase(Node* son,const Key &key){
+            int i;
+            if(son->isLeaf){
+                i=son->keySize;
+                while(i>=1&&son->getKey(i)>key)i--;
+                if(i==1){
+                    son->moveBack(i);
+                    son->keySize--;
+                    son->pointSize--;
+                    write_block(*son);
+                    if(son->keySize>=m/2+1)return 1;//表示此时删除的是节点的第一个数据，需要修改其父节点的key值;但不需要和邻居合并
+                    if(son->keySize==m/2) return -1;//表示此时删除的是节点的第一个数据，需要修改其父节点的key值，同时需要和邻居合并或领养孩子
+                }
+                else{
+                    son->moveBack(i);
+                    son->keySize--;
+                    son->pointSize--;
+                    write_block(*son);
+                    if(son->keySize>=m/2+1)return 0;//表示此时删除的是节点的第一个数据之外的数据，且不需要和邻居合并
+                    if(son->keySize==m/2) return -2;//表示此时删除的是节点的第一个数据之外的数据，且同时需要和邻居合并或领养孩子
+                }
+            }
+            else{
+                i = son->keySize;
+                while(i>=2&&son->getKey(i)>key)i--;
+                if(son->child[i]==NULL){
+                    son->child[i]=new Node;
+                    get_block(son->getOff(i),*(son->child[i]));
+                }
+                int a = erase(son->child[i],key);
+                if(a==0) {
+                    return 0;
+                }
+                else if(a==1){
+                    son->modifyKey(i,son->child[i]->getKey(1));
+                    write_block(*son);
+                    if(i==1)return 1;
+                    else return 0;
+                }
+                else{
+                    if(a==-1) son->modifyKey(i,son->child[i]->getKey(1));
+                    if(i==1){
+                        if(son->child[2]==NULL){
+                            son->child[2]=new Node;
+                            get_block(son->getOff(2),*(son->child[2]));
+                        }
+                        if(son->child[2]->keySize==m/2+1){
+                            int pos = (m/2)*sizeof(Key)+(m/2)*son->dataSize;
+                            memmove(son->child[1]->info+pos,son->child[2]->info,(m/2+1)*sizeof(Key)+(m/2+1)*son->dataSize);
+                            memmove(son->child[1]->child+1+m/2,son->child[2]->child+1,(m/2+1)*sizeof(Node*));
+                            son->child[1]->keySize+=m/2+1;
+                            son->child[1]->pointSize+=m/2+1;
+                            delete son->child[2];
+                            son->child[2]=NULL;
+                            son->moveBack(2);
+                            son->keySize--;
+                            son->pointSize--;
+                            write_block(*(son->child[1]));
+                        }
+                        else{
+                            int pos = (m/2)*sizeof(Key)+(m/2)*son->dataSize;
+                            memmove(son->child[1]->info+pos,son->child[2]->info,sizeof(Key)+son->dataSize);
+                            memmove(son->child[1]->child+1+m/2,son->child[2]->child+1,sizeof(Node*));
+                            son->child[2]->moveBack(1);
+                            son->modifyKey(2,son->child[2]->getKey(1));
+                            son->child[1]->keySize++;
+                            son->child[1]->pointSize++;
+                            son->child[2]->keySize--;
+                            son->child[2]->pointSize--;
+                            write_block(*(son->child[1]));
+                            write_block(*(son->child[2]));
+                        }
+                    }
+                    else{
+                        if(son->child[i-1]==NULL){
+                            son->child[i-1]=new Node;
+                            get_block(son->getOff(i-1),*(son->child[i-1]));
+                        }
+                        if(son->child[i-1]->keySize==m/2+1){
+                            int pos = (m/2+1)*sizeof(Key)+(m/2+1)*son->dataSize;
+                            memmove(son->child[i-1]->info+pos,son->child[i]->info,(m/2)*sizeof(Key)+(m/2)*son->dataSize);
+                            memmove(son->child[i-1]->child+1+m/2+1,son->child[i]->child+1,(m/2)*sizeof(Node*));
+                            son->child[i-1]->keySize+=m/2;
+                            son->child[i-1]->pointSize+=m/2;
+                            delete son->child[i];
+                            son->child[i]=NULL;
+                            son->moveBack(i);
+                            son->keySize--;
+                            son->pointSize--;
+                            write_block(*(son->child[i-1]));
+                        }
+                        else{
+                            int s = son->child[i-1]->keySize;
+                            son->child[i]->move(1);
+                            memmove(son->child[i]->info,son->child[i-1]->info+(s-1)*(sizeof(Key)+son->dataSize),sizeof(Key)+son->dataSize);
+                            memmove(son->child[i]->child+1,son->child[i-1]->child+s,sizeof(Node*));
+                            son->modifyKey(i,son->child[i]->getKey(1));
+                            son->child[i]->keySize++;
+                            son->child[i]->pointSize++;
+                            son->child[i-1]->keySize--;
+                            son->child[i-1]->pointSize--;
+                            write_block(*(son->child[i]));
+                            write_block(*(son->child[i-1]));
+                        }
+                    }
+                    write_block(*son);
+                    if(a==-1&&i==1&&son->keySize==m/2){return -1;}
+                    else if(a==-1&&i==1) return 1;
+                    else if(son->keySize==m/2)return -2;
+                    else return 0;
+                }
+            }
         }
 
         void clear(Node* node){
@@ -386,12 +508,23 @@ namespace sjtu {
                 }
                 r=r->child[i];
             }
-            if(i==0||r->getKey(i)<key)return Value();
+            if(i==0||r->getKey(i)!=key)return Value();
             else return r->getVal(i);
         }
 
         bool erase(const Key &key) {
-            
+            flagRevise=true;
+            //init();
+            if(!ifExist(key)) return false;
+            else{
+                erase(root,key);
+                if(root->keySize==1){
+                    Node* r = root->child[1];
+                    delete root;
+                    root = r;
+                    update();
+                }
+            }
         }
         
         
@@ -546,14 +679,19 @@ namespace sjtu {
         iterator find(const Key &key) {
             //init();
             iterator a;
-            *(a.cur) =*root;
+            Node * r=root;
             int i;
             while(1){
-                i = a.cur->keySize;
-                while(i>=2&&a.cur->getKey(i)>key)i--;
-                if(a.cur->isLeaf)break;
-                get_block(a.cur->getOff(i),*(a.cur));
+                i = r->keySize;
+                while(i>=2&&r->getKey(i)>key)i--;
+                if(r->isLeaf)break;
+                if(r->child[i]==NULL){
+                    r->child[i]=new Node;
+                    get_block(r->getOff(i),*(r->child[i]));
+                }
+                r=r->child[i];
             }
+            *(a.cur)=*r;
             a.num = i;
             return a;
         }
