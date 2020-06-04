@@ -25,9 +25,9 @@ namespace sjtu {
             Rank keySize;//键值个数
             Rank pointSize;//指针个数
             bool isLeaf;//是否为叶子节点
-            char *info;
+            char *info;//key值信息、节点外存地址或数据
             int dataSize;
-            Node* child[m+2];
+            Node* child[m+2];//内存中的指针
             Node(bool is = false):isLeaf(is),keySize(0),pointSize(0),next(-1),prev(-1),addr(0){
                 dataSize=max(sizeof(offset),sizeof(Value));
                 info = new char[sizeof(Key) * (m+1) + dataSize * (m+1)];
@@ -47,7 +47,7 @@ namespace sjtu {
                 memcpy(info,other.info,sizeof(Key) * (m+1)+ dataSize * (m+1));
                 memcpy(child,other.child,(m+2)*sizeof(Node*));
             }
-            ~Node(){delete info;}
+            ~Node(){delete []info;}
             Key getKey(int n)const{
                 int pos = (n-1)*sizeof(Key)+(n-1)*dataSize;
                 char temp[sizeof(Key)];
@@ -87,7 +87,6 @@ namespace sjtu {
                 pointSize=other.pointSize;
                 isLeaf=other.isLeaf;
                 dataSize=other.dataSize;
-                info = new char[sizeof(Key) * (m+1) + dataSize * (m+1)];
                 memcpy(info,other.info,sizeof(Key) * (m+1)+ dataSize * (m+1));
                 memcpy(child,other.child,(m+2)*sizeof(Node*));
             }
@@ -169,7 +168,7 @@ namespace sjtu {
         void getLast(){
             Node* r = root;
             while(!r->isLeaf){
-                r->child[r->pointSize]=new Node;
+                if(r->child[r->pointSize]==NULL)r->child[r->pointSize]=new Node;
                 get_block(r->getOff(r->pointSize),*(r->child[r->pointSize]));
                 r=r->child[r->pointSize];
             }
@@ -580,7 +579,6 @@ namespace sjtu {
             }
             iterator& operator=(const iterator& other) {
                 if(&other==this) return *this;
-                cur=new Node;
                 *cur=*(other.cur);
                 num=other.num;
             }
