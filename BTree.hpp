@@ -19,15 +19,15 @@ namespace sjtu {
     private:
         // Your private members go here
         struct Node{
-            offset addr;//µØÖ·
+            offset addr;//åœ°å€
             offset prev;
-            offset next;//ÐÖµÜ½ÚµãµÄµØÖ·
-            Rank keySize;//¼üÖµ¸öÊý
-            Rank pointSize;//Ö¸Õë¸öÊý
-            bool isLeaf;//ÊÇ·ñÎªÒ¶×Ó½Úµã
-            char *info;//keyÖµÐÅÏ¢¡¢½ÚµãÍâ´æµØÖ·»òÊý¾Ý
+            offset next;//å…„å¼ŸèŠ‚ç‚¹çš„åœ°å€
+            Rank keySize;//é”®å€¼ä¸ªæ•°
+            Rank pointSize;//æŒ‡é’ˆä¸ªæ•°
+            bool isLeaf;//æ˜¯å¦ä¸ºå¶å­èŠ‚ç‚¹
+            char *info;//keyå€¼ä¿¡æ¯ã€èŠ‚ç‚¹å¤–å­˜åœ°å€æˆ–æ•°æ®
             int dataSize;
-            Node* child[m+2];//ÄÚ´æÖÐµÄÖ¸Õë
+            Node* child[m+2];//å†…å­˜ä¸­çš„æŒ‡é’ˆ
             Node(bool is = false):isLeaf(is),keySize(0),pointSize(0),next(-1),prev(-1),addr(0){
                 dataSize=max(sizeof(offset),sizeof(Value));
                 info = new char[sizeof(Key) * (m+1) + dataSize * (m+1)];
@@ -91,7 +91,7 @@ namespace sjtu {
                 memcpy(child,other.child,(m+2)*sizeof(Node*));
             }
 
-            void move(int n){//½«µÚn¸öKeyºóµÄ½ÚµãÐÅÏ¢ºóÒÆ¶¯£¬ÒÔ±ã¿Õ³ö¿Õ¼ä²åÈëÐÂÐÅÏ¢
+            void move(int n){//å°†ç¬¬nä¸ªKeyåŽçš„èŠ‚ç‚¹ä¿¡æ¯åŽç§»åŠ¨ï¼Œä»¥ä¾¿ç©ºå‡ºç©ºé—´æ’å…¥æ–°ä¿¡æ¯
                 if(keySize==m+1||n==m+1)return;
                 int pos = (n-1)*sizeof(Key)+(n-1)*dataSize;
                 memmove(info+pos+sizeof(Key)+dataSize,
@@ -101,7 +101,7 @@ namespace sjtu {
                         child+n,
                         (keySize-n+1)*sizeof(Node*));
             }
-            void moveBack(int n){//½«µÚn¸öKeyºóµÄ½ÚµãÐÅÏ¢ÏòÇ°ÒÆ¶¯£¬Ïàµ±ÓÚÉ¾³ýµÚn¸ö½Úµã
+            void moveBack(int n){//å°†ç¬¬nä¸ªKeyåŽçš„èŠ‚ç‚¹ä¿¡æ¯å‘å‰ç§»åŠ¨ï¼Œç›¸å½“äºŽåˆ é™¤ç¬¬nä¸ªèŠ‚ç‚¹
                 if(keySize==1)return;
                 int pos = (n-1)*sizeof(Key)+(n-1)*dataSize;
                 memmove(info+pos,
@@ -113,13 +113,13 @@ namespace sjtu {
             }
         };
 
-        int size;//Ä¿Ç°Ëùº¬½Úµã¸öÊý
-        offset locate;//¸ù½ÚµãµØÖ·
-        char filename[100];//ÎÄ¼þÃû
-        FILE *file;//ÎÄ¼þÖ¸Õë
+        int size;//ç›®å‰æ‰€å«èŠ‚ç‚¹ä¸ªæ•°
+        offset locate;//æ ¹èŠ‚ç‚¹åœ°å€
+        char filename[100];//æ–‡ä»¶å
+        FILE *file;//æ–‡ä»¶æŒ‡é’ˆ
         Node* root;
         Node* last;
-        bool flagRevise;//Ê÷ÊÇ·ñ±»ÐÞ¸Ä
+        bool flagRevise;//æ ‘æ˜¯å¦è¢«ä¿®æ”¹
 
         void write_block(Node &cur) {
             fseek(file, cur.addr, SEEK_SET);
@@ -153,14 +153,14 @@ namespace sjtu {
             }
         }
 
-        void init(){ //¸üÐÂÄÚ´æÖÐ¸ù½ÚµãÐÅÏ¢
+        void init(){ //æ›´æ–°å†…å­˜ä¸­æ ¹èŠ‚ç‚¹ä¿¡æ¯
             fseek(file, 0, SEEK_SET);
             fread(&size,sizeof(int),1,file);
             fread(&locate,sizeof(offset),1,file);
             get_block(locate,*root);
         }
 
-        void update(){//¸üÐÂÍâ´æÖÐµÄ³õÊ¼ÐÅÏ¢,Ö»Ôö¼Ó²»¼õÉÙ
+        void update(){//æ›´æ–°å¤–å­˜ä¸­çš„åˆå§‹ä¿¡æ¯,åªå¢žåŠ ä¸å‡å°‘
             fseek(file, 0, SEEK_SET);
             fwrite(&size,sizeof(int),1,file);
             fwrite(&locate,sizeof(offset),1,file);
@@ -175,7 +175,7 @@ namespace sjtu {
             last=r;
         }
 
-        bool ifExist(const Key &key) {//ÅÐ¶ÏÄ³¸ö¼üÖµµÄÔªËØÊÇ·ñ´æÔÚ
+        bool ifExist(const Key &key) {//åˆ¤æ–­æŸä¸ªé”®å€¼çš„å…ƒç´ æ˜¯å¦å­˜åœ¨
             //init();
             Node* r = root;
             int i;
@@ -200,7 +200,7 @@ namespace sjtu {
             return sizeof(int)+sizeof(offset)+
             (sizeof(offset)*2+sizeof(Rank)*2+sizeof(bool)+sizeof(Key) * (m+1) + max(sizeof(Value),sizeof(offset)) * (m+1))*size;
         }
-        void split(Node* father, Node* son,int i){//·ÖÁÑ½Úµã£¬´ËÊ±fatherÎ´Âú(ÓÐÐ¡ÓÚm¸ökey)£¬sonÒÑÂú£¨keySize==m£©£¬sonÊÇfatherµÄµÚi¸öÖ¸Õë
+        void split(Node* father, Node* son,int i){//åˆ†è£‚èŠ‚ç‚¹ï¼Œæ­¤æ—¶fatheræœªæ»¡(æœ‰å°äºŽmä¸ªkey)ï¼Œsonå·²æ»¡ï¼ˆkeySize==mï¼‰ï¼Œsonæ˜¯fatherçš„ç¬¬iä¸ªæŒ‡é’ˆ
             Node*bro=new Node;
             bro->addr = getAddr();
             size++;
@@ -272,16 +272,16 @@ namespace sjtu {
                     son->keySize--;
                     son->pointSize--;
                     write_block(*son);
-                    if(son->keySize>=m/2+1)return 1;//±íÊ¾´ËÊ±É¾³ýµÄÊÇ½ÚµãµÄµÚÒ»¸öÊý¾Ý£¬ÐèÒªÐÞ¸ÄÆä¸¸½ÚµãµÄkeyÖµ;µ«²»ÐèÒªºÍÁÚ¾ÓºÏ²¢
-                    if(son->keySize==m/2) return -1;//±íÊ¾´ËÊ±É¾³ýµÄÊÇ½ÚµãµÄµÚÒ»¸öÊý¾Ý£¬ÐèÒªÐÞ¸ÄÆä¸¸½ÚµãµÄkeyÖµ£¬Í¬Ê±ÐèÒªºÍÁÚ¾ÓºÏ²¢»òÁìÑøº¢×Ó
+                    if(son->keySize>=m/2+1)return 1;//è¡¨ç¤ºæ­¤æ—¶åˆ é™¤çš„æ˜¯èŠ‚ç‚¹çš„ç¬¬ä¸€ä¸ªæ•°æ®ï¼Œéœ€è¦ä¿®æ”¹å…¶çˆ¶èŠ‚ç‚¹çš„keyå€¼;ä½†ä¸éœ€è¦å’Œé‚»å±…åˆå¹¶
+                    if(son->keySize==m/2) return -1;//è¡¨ç¤ºæ­¤æ—¶åˆ é™¤çš„æ˜¯èŠ‚ç‚¹çš„ç¬¬ä¸€ä¸ªæ•°æ®ï¼Œéœ€è¦ä¿®æ”¹å…¶çˆ¶èŠ‚ç‚¹çš„keyå€¼ï¼ŒåŒæ—¶éœ€è¦å’Œé‚»å±…åˆå¹¶æˆ–é¢†å…»å­©å­
                 }
                 else{
                     son->moveBack(i);
                     son->keySize--;
                     son->pointSize--;
                     write_block(*son);
-                    if(son->keySize>=m/2+1)return 0;//±íÊ¾´ËÊ±É¾³ýµÄÊÇ½ÚµãµÄµÚÒ»¸öÊý¾ÝÖ®ÍâµÄÊý¾Ý£¬ÇÒ²»ÐèÒªºÍÁÚ¾ÓºÏ²¢
-                    if(son->keySize==m/2) return -2;//±íÊ¾´ËÊ±É¾³ýµÄÊÇ½ÚµãµÄµÚÒ»¸öÊý¾ÝÖ®ÍâµÄÊý¾Ý£¬ÇÒÍ¬Ê±ÐèÒªºÍÁÚ¾ÓºÏ²¢»òÁìÑøº¢×Ó
+                    if(son->keySize>=m/2+1)return 0;//è¡¨ç¤ºæ­¤æ—¶åˆ é™¤çš„æ˜¯èŠ‚ç‚¹çš„ç¬¬ä¸€ä¸ªæ•°æ®ä¹‹å¤–çš„æ•°æ®ï¼Œä¸”ä¸éœ€è¦å’Œé‚»å±…åˆå¹¶
+                    if(son->keySize==m/2) return -2;//è¡¨ç¤ºæ­¤æ—¶åˆ é™¤çš„æ˜¯èŠ‚ç‚¹çš„ç¬¬ä¸€ä¸ªæ•°æ®ä¹‹å¤–çš„æ•°æ®ï¼Œä¸”åŒæ—¶éœ€è¦å’Œé‚»å±…åˆå¹¶æˆ–é¢†å…»å­©å­
                 }
             }
             else{
@@ -384,10 +384,10 @@ namespace sjtu {
         }
     public:
         BTree(const char *fname="MyDatabase") {
-            FILE* flag = fopen(fname,"rb");//ÓÃÓÚÅÐ¶Ï¸ÄÎÄ¼þÊÇ·ñÒÑ¾­´æÔÚ
-            if(!flag){  //¸ÃÎÄ¼þ²»´æÔÚ
+            FILE* flag = fopen(fname,"rb");//ç”¨äºŽåˆ¤æ–­æ”¹æ–‡ä»¶æ˜¯å¦å·²ç»å­˜åœ¨
+            if(!flag){  //è¯¥æ–‡ä»¶ä¸å­˜åœ¨
                 strcpy(filename,fname);
-                root = new Node(true);//³õÊ¼»¯¸ù½ÚµãÐÅÏ¢
+                root = new Node(true);//åˆå§‹åŒ–æ ¹èŠ‚ç‚¹ä¿¡æ¯
                 root->addr=sizeof(int)+sizeof(offset);
                 root->pointSize=root->keySize=0;
                 size=1;locate = root->addr;
@@ -414,11 +414,11 @@ namespace sjtu {
         }
 
         // Clear the BTree
-        void clear() {//ÓÃwb+Ä£Ê½¼´¿É
+        void clear() {//ç”¨wb+æ¨¡å¼å³å¯
             flagRevise=true;
             clear(root);
             fclose(file);
-            root = new Node(true);//³õÊ¼»¯¸ù½ÚµãÐÅÏ¢
+            root = new Node(true);//åˆå§‹åŒ–æ ¹èŠ‚ç‚¹ä¿¡æ¯
             root->addr=sizeof(int)+sizeof(offset);
             root->pointSize=root->keySize=0;
             size=1;locate = root->addr;
@@ -447,7 +447,7 @@ namespace sjtu {
                     bro->pointSize=root->pointSize = root->pointSize/2;
                     memcpy(bro->info,root->info+root->pointSize*(sizeof(Key)+root->dataSize),
                             root->pointSize*(sizeof(Key)+root->dataSize));
-                    newNode->addr=getAddr();//»ñµÃÐÂ½ÚµãµØÖ·
+                    newNode->addr=getAddr();//èŽ·å¾—æ–°èŠ‚ç‚¹åœ°å€
                     size++;
                     newNode->keySize=2;
                     newNode->pointSize=2;
